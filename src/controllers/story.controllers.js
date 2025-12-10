@@ -1,22 +1,10 @@
 import Story from "../models/story.model.js";
 import Epic from "../models/epic.model.js";
 
-// GET /api/epics/:id/stories
-export const getStoriesByEpic = async (req, res) => {
+// GET /api/stories
+export const getStories = async (req, res) => {
     try {
-        const { id: epicId } = req.params;
-
-        const epic = await Epic.findById(epicId).populate("project", "owner");
-
-        if (!epic) {
-            return res.status(404).json({ message: "Épica no encontrada" });
-        }
-
-        if (epic.project.owner.toString() !== req.user.id) {
-            return res.status(404).json({ message: "Épica no encontrada o no autorizada" });
-        }
-
-        const stories = await Story.find({ epic: epicId });
+        const stories = await Story.find({ owner: req.user.id }).populate("epic");
 
         res.status(200).json({
             message: "Historias obtenidas exitosamente",
@@ -46,6 +34,33 @@ export const getStory = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Error al obtener la historia" });
+    }
+};
+
+// GET /api/epics/:id/stories
+export const getStoriesByEpic = async (req, res) => {
+    try {
+        const { id: epicId } = req.params;
+
+        const epic = await Epic.findById(epicId).populate("project", "owner");
+
+        if (!epic) {
+            return res.status(404).json({ message: "Épica no encontrada" });
+        }
+
+        if (epic.project.owner.toString() !== req.user.id) {
+            return res.status(404).json({ message: "Épica no encontrada o no autorizada" });
+        }
+
+        const stories = await Story.find({ epic: epicId });
+
+        res.status(200).json({
+            message: "Historias obtenidas exitosamente",
+            stories,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error al obtener las historias" });
     }
 };
 
@@ -114,8 +129,6 @@ export const deleteStory = async (req, res) => {
     try {
         const { id: storyId } = req.params;
 
-        // VALIDACIÓN SIMPLIFICADA
-        // Verificamos y borramos solo si el usuario es el dueño
         const storyDeleted = await Story.findOneAndDelete({
             _id: storyId,
             owner: req.user.id,
@@ -125,8 +138,6 @@ export const deleteStory = async (req, res) => {
             return res.status(404).json({ message: "Historia no encontrada o no autorizada" });
         }
 
-        // NOTA: Cuando implementemos Tareas (Tasks), aquí deberíamos verificar
-        // que la historia no tenga tareas antes de borrarla.
         // const hasTasks = await Task.findOne({ story: storyId }); ...
 
         res.status(200).json({

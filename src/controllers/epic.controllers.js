@@ -7,14 +7,9 @@ export const getEpic = async (req, res) => {
     try {
         const { id: epicId } = req.params;
 
-        // Se utiliza populate para obtener el owner del proyecto asociado y validar permisos
-        const epic = await Epic.findById(epicId).populate("project", "owner");
+        const epic = await Epic.findOne({ _id: epicId, owner: req.user.id });
 
         if (!epic) {
-            return res.status(404).json({ message: "Épica no encontrada o no autorizada" });
-        }
-
-        if (epic.project.owner.toString() !== req.user.id) {
             return res.status(404).json({ message: "Épica no encontrada o no autorizada" });
         }
 
@@ -33,7 +28,6 @@ export const getEpicsByProject = async (req, res) => {
     try {
         const { id: projectId } = req.params;
 
-        // Verificar existencia del proyecto y permisos del usuario
         const project = await Project.findOne({ _id: projectId, owner: req.user.id });
 
         if (!project) {
@@ -61,7 +55,6 @@ export const createEpic = async (req, res) => {
             return res.status(400).json({ message: "El nombre y el proyecto son obligatorios" });
         }
 
-        // Validar que el proyecto padre pertenezca al usuario autenticado
         const projectData = await Project.findOne({ _id: project, owner: req.user.id });
 
         if (!projectData) {
@@ -73,6 +66,7 @@ export const createEpic = async (req, res) => {
             description,
             icon,
             project,
+            owner: req.user.id,
         });
 
         const epicSaved = await newEpic.save();
@@ -92,14 +86,15 @@ export const updateEpic = async (req, res) => {
     try {
         const { id: epicId } = req.params;
 
-        // Verificar propiedad antes de ejecutar la actualización
-        const epic = await Epic.findById(epicId).populate("project", "owner");
+        const epicUpdated = await Epic.findOneAndUpdate(
+            { _id: epicId, owner: req.user.id },
+            req.body,
+            { new: true }
+        );
 
-        if (!epic || epic.project.owner.toString() !== req.user.id) {
+        if (!epicUpdated) {
             return res.status(404).json({ message: "Épica no encontrada o no autorizada" });
         }
-
-        const epicUpdated = await Epic.findByIdAndUpdate(epicId, req.body, { new: true });
 
         res.status(200).json({
             message: "Épica actualizada exitosamente",
@@ -116,9 +111,9 @@ export const deleteEpic = async (req, res) => {
     try {
         const { id: epicId } = req.params;
 
-        const epic = await Epic.findById(epicId).populate("project", "owner");
+        const epic = await Epic.findOne({ _id: epicId, owner: req.user.id });
 
-        if (!epic || epic.project.owner.toString() !== req.user.id) {
+        if (!epic) {
             return res.status(404).json({ message: "Épica no encontrada o no autorizada" });
         }
 
@@ -130,7 +125,7 @@ export const deleteEpic = async (req, res) => {
             });
         }
 
-        await Epic.findByIdAndDelete(epicId);
+        await Epic.deleteOne({ _id: epicId });
 
         res.status(200).json({
             message: "Épica eliminada exitosamente",

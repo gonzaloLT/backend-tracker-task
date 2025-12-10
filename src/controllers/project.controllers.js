@@ -1,6 +1,7 @@
 import Project from "../models/project.model.js";
 import Epic from "../models/epic.model.js";
 
+// GET /api/projects
 export const getProjects = async (req, res) => {
     try {
         const projects = await Project.find({ owner: req.user.id });
@@ -15,6 +16,7 @@ export const getProjects = async (req, res) => {
     }
 };
 
+// GET /api/projects/:id
 export const getProject = async (req, res) => {
     try {
         const { id } = req.params;
@@ -36,6 +38,7 @@ export const getProject = async (req, res) => {
     }
 };
 
+// POST /api/projects
 export const createProject = async (req, res) => {
     try {
         const { title, description, icon } = req.body;
@@ -65,6 +68,7 @@ export const createProject = async (req, res) => {
     }
 };
 
+// PUT /api/projects/:id
 export const updateProject = async (req, res) => {
     try {
         const { id } = req.params;
@@ -90,6 +94,7 @@ export const updateProject = async (req, res) => {
     }
 };
 
+// DELETE /api/projects/:id
 export const deleteProject = async (req, res) => {
     try {
         const { id: projectId } = req.params;

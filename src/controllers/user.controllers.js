@@ -8,9 +8,7 @@ export const loginUser = async (req, res) => {
         const { username, password } = req.body;
 
         if (!username || !password) {
-            return res
-                .status(400)
-                .json({ message: "Usuario y contraseña son requeridos" });
+            return res.status(400).json({ message: "Usuario y contraseña son requeridos" });
         }
 
         const user = await User.findOne({ username });
@@ -56,9 +54,7 @@ export const registerUser = async (req, res) => {
 
         const userFound = await User.findOne({ username });
         if (userFound) {
-            return res
-                .status(409)
-                .json({ message: "El nombre de usuario ya está en uso" });
+            return res.status(409).json({ message: "El nombre de usuario ya está en uso" });
         }
 
         const passwordHash = await bcrypt.hash(password, 10);

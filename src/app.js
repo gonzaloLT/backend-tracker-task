@@ -8,6 +8,7 @@ import userRoutes from "./routes/user.routes.js";
 import projectRoutes from "./routes/project.routes.js";
 import epicRoutes from "./routes/epic.routes.js";
 import storyRoutes from "./routes/story.routes.js";
+import taskRoutes from "./routes/task.routes.js";
 
 import { verifyToken } from "./middlewares/auth.middlewares.js";
 
@@ -28,6 +29,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/projects", verifyToken, projectRoutes);
 app.use("/api/epics", verifyToken,  epicRoutes);
 app.use("/api/stories", verifyToken, storyRoutes);
+app.use("/api/tasks", verifyToken, taskRoutes);
 
 
 
