@@ -1,5 +1,6 @@
 import Epic from "../models/epic.model.js";
 import Project from "../models/project.model.js";
+import Story from "../models/story.model.js";
 
 // GET /api/epics/:id
 export const getEpic = async (req, res) => {
@@ -119,6 +120,14 @@ export const deleteEpic = async (req, res) => {
 
         if (!epic || epic.project.owner.toString() !== req.user.id) {
             return res.status(404).json({ message: "Épica no encontrada o no autorizada" });
+        }
+
+        const hasStories = await Story.findOne({ epic: epicId });
+
+        if (hasStories) {
+            return res.status(400).json({
+                message: "No se puede eliminar la épica porque tiene historias asociadas.",
+            });
         }
 
         await Epic.findByIdAndDelete(epicId);

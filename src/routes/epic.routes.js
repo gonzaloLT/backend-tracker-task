@@ -5,6 +5,8 @@ import {
     updateEpic,
     deleteEpic,
 } from "../controllers/epic.controllers.js";
+import { getStoriesByEpic } from "../controllers/story.controllers.js";
+
 
 const router = Router();
 
@@ -15,6 +17,6 @@ router.put("/:id", updateEpic);
 router.delete("/:id", deleteEpic);
 
 // Obtener historias de usuario de una épica
-
+router.get("/:id/stories", getStoriesByEpic);
 
 export default router;
