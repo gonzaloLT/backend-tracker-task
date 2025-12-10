@@ -1,4 +1,5 @@
 import Project from "../models/project.model.js";
+import Epic from "../models/epic.model.js";
 
 export const getProjects = async (req, res) => {
     try {
@@ -91,21 +92,29 @@ export const updateProject = async (req, res) => {
 
 export const deleteProject = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { id: projectId } = req.params;
 
-        const projectDeleted = await Project.findOneAndDelete({
-            _id: id,
-            owner: req.user.id,
-        });
+        const project = await Project.findOne({ _id: projectId, owner: req.user.id });
 
-        if (!projectDeleted) {
+        if (!project) {
             return res.status(404).json({ message: "Proyecto no encontrado" });
         }
 
+        const hasEpics = await Epic.findOne({ project: projectId });
+
+        if (hasEpics) {
+            return res.status(400).json({
+                message: "No se puede eliminar el proyecto porque tiene épicas asociadas.",
+            });
+        }
+
+        await Project.deleteOne({ _id: projectId });
+
         res.status(200).json({
             message: "Proyecto eliminado exitosamente",
-            project: projectDeleted,
+            project,
         });
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Error al eliminar el proyecto" });

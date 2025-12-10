@@ -2,7 +2,8 @@ import mongoose from "mongoose";
 
 const schema = mongoose.Schema;
 
-const epicSchema = new schema({
+const epicSchema = new schema(
+    {
         project: {
             type: schema.Types.ObjectId,
             ref: "Project",
