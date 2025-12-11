@@ -1,356 +1,136 @@
-# Backend - Task Tracker API
+# 🚀 TaskManager API - Documentación Técnica
 
-API REST para la gestión de proyectos, épicas, historias y tareas.
+Backend API RESTful desarrollada con **Node.js**, **Express** y **MongoDB** para la gestión integral de proyectos. Este sistema permite administrar Proyectos, Épicas, Historias de Usuario y Tareas, siguiendo una estructura jerárquica y validaciones de seguridad basadas en la propiedad del recurso (*Ownership*).
 
-## 📋 Descripción
+## 🛠️ Tecnologías Utilizadas
 
-Backend desarrollado con Express.js que proporciona una API RESTful completa para gestionar:
-- **Usuarios**: Autenticación y gestión de usuarios
-- **Proyectos**: Creación y gestión de proyectos
-- **Épicas**: Agrupación de funcionalidades dentro de proyectos
-- **Historias**: Historias de usuario dentro de épicas
-- **Tareas**: Tareas específicas dentro de historias
+-   **Runtime:** Node.js
+-   **Framework:** Express.js
+-   **Base de Datos:** MongoDB
+-   **ODM:** Mongoose
+-   **Autenticación:** JWT (JSON Web Tokens)
+-   **Seguridad:** Bcrypt (Hashing) & CORS
 
-## 🚀 Características
+---
 
-- ✅ Autenticación con JWT
-- ✅ Middleware de autorización
-- ✅ API RESTful completa
-- ✅ Integración con MongoDB
-- ✅ Encriptación de contraseñas con bcrypt
-- ✅ CORS habilitado
-- ✅ Validación de datos
+## ⚙️ Instalación y Configuración
 
-## 📁 Estructura del Proyecto
+### 1. Variables de Entorno
+Crea un archivo `.env` en la raíz del proyecto y define las siguientes variables:
 
-```
-src/
-├── app.js                   # Configuración principal de Express
-├── config/
-│   └── db.js               # Configuración de conexión a MongoDB
-├── controllers/            # Lógica de negocio
-│   ├── user.controllers.js
-│   ├── project.controllers.js
-│   ├── epic.controllers.js
-│   ├── story.controllers.js
-│   └── task.controllers.js
-├── middlewares/            # Middleware de la aplicación
-│   └── auth.middlewares.js # Verificación de JWT
-├── models/                 # Modelos de datos (MongoDB)
-│   ├── user.model.js
-│   ├── project.model.js
-│   ├── epic.model.js
-│   ├── story.model.js
-│   └── task.model.js
-└── routes/                 # Definición de rutas
-    ├── user.routes.js
-    ├── project.routes.js
-    ├── epic.routes.js
-    ├── story.routes.js
-    └── task.routes.js
-```
+| Variable | Descripción | Ejemplo |
+| :--- | :--- | :--- |
+| `PORT` | Puerto del servidor | `8000` |
+| `MONGO_URI` | Cadena de conexión a MongoDB | `mongodb://localhost:27017/taskmanager` |
+| `JWT_SECRET` | Clave secreta para firmar tokens | `mi_clave_secreta_super_segura` |
 
-## 🔧 Requisitos Previos
-
-- Node.js v16 o superior
-- npm o yarn
-- MongoDB (local o Atlas)
-
-## 💻 Instalación
+### 2. Ejecución
 
 ```bash
+# 1. Instalar dependencias
 npm install
-```
 
-## 🔐 Configuración
-
-Crear archivo `.env` en la raíz del proyecto:
-
-```env
-PORT=8000
-MONGODB_URI=mongodb+srv://usuario:contraseña@cluster.mongodb.net/nombre_bd
-JWT_SECRET=tu_clave_secreta_muy_segura
-```
-
-## 🏃 Ejecución
-
-### Modo desarrollo (con nodemon)
-```bash
+# 2. Iniciar en modo desarrollo (requiere nodemon)
 npm run dev
-```
 
-### Modo producción
-```bash
+# 3. Iniciar en modo producción
 npm start
 ```
 
-El servidor estará disponible en `http://localhost:8000`
+## 📡 Códigos de Estado HTTP
+
+La API utiliza los siguientes códigos estándar para indicar el resultado de las operaciones:
+
+| Código | Estado | Significado en esta API |
+| :--- | :--- | :--- |
+| **200** | `OK` | Petición exitosa (GET, PUT, DELETE). |
+| **201** | `Created` | Recurso creado exitosamente (POST). |
+| **400** | `Bad Request` | Faltan datos obligatorios o conflicto de integridad (ej: borrar padre con hijos). |
+| **401** | `Unauthorized` | Credenciales inválidas o Token no provisto. |
+| **403** | `Forbidden` | Token válido, pero no eres el dueño del recurso. |
+| **404** | `Not Found` | El recurso no existe o no tienes acceso a él. |
+| **409** | `Conflict` | Dato duplicado (ej: Usuario ya registrado). |
+| **500** | `Server Error` | Error interno del servidor. |
+
+---
+
+## 🔐 Reglas de Negocio y Seguridad
+
+### 1. Ownership (Propiedad)
+Para garantizar la privacidad y seguridad, todas las entidades (`Project`, `Epic`, `Story`, `Task`) cuentan con un campo `owner`.
+* El sistema valida en cada petición de lectura, escritura o eliminación que `req.user.id === resource.owner`.
+* Esto impide que un usuario manipule datos de otro, protegiendo contra vulnerabilidades IDOR.
+
+### 2. Integridad Referencial (Borrado Seguro)
+El sistema protege la estructura de datos impidiendo eliminaciones accidentales en cascada:
+* ❌ **Proyectos:** No se pueden eliminar si contienen **Épicas**.
+* ❌ **Épicas:** No se pueden eliminar si contienen **Historias**.
+* ✅ **Solución:** Se deben eliminar los elementos "hijos" antes de poder eliminar al "padre".
+
+---
 
 ## 📚 Documentación de Endpoints
 
-### Autenticación (sin protección)
+**Autenticación requerida:** Todas las rutas (excepto `/users`) requieren el header `Authorization: Bearer <token>`.
 
-#### Registrar usuario
-```
-POST /api/users/register
-Content-Type: application/json
+### 👤 Usuarios (Auth)
+| Método | Endpoint | Descripción | Body Requerido |
+| :----- | :------- | :---------- | :------------- |
+| `POST` | `/api/users/register` | Registro de usuario | `{ username, password, name: { first, last } }` |
+| `POST` | `/api/users/login` | Inicio de sesión | `{ username, password }` |
 
-{
-  "email": "usuario@ejemplo.com",
-  "password": "contraseña",
-  "nombre": "Juan"
-}
-```
+### 📁 Proyectos (`/api/projects`)
+| Método | Endpoint | Descripción |
+| :----- | :------- | :---------- |
+| `GET` | `/` | Obtiene todos los proyectos del usuario. |
+| `POST` | `/` | Crea un nuevo proyecto. |
+| `GET` | `/:id` | Obtiene un proyecto por ID. |
+| `PUT` | `/:id` | Actualiza un proyecto. |
+| `DELETE` | `/:id` | Elimina un proyecto (Valida que no tenga épicas). |
+| `GET` | `/:id/epics` | **Anidado:** Obtiene todas las épicas de este proyecto. |
 
-#### Iniciar sesión
-```
-POST /api/users/login
-Content-Type: application/json
+### ⚡ Épicas (`/api/epics`)
+| Método | Endpoint | Descripción | Params / Body |
+| :----- | :------- | :---------- | :------------ |
+| `POST` | `/` | Crea una épica. | Body: `{ name, project: ID, icon... }` |
+| `GET` | `/:id` | Obtiene una épica por ID. | |
+| `PUT` | `/:id` | Actualiza una épica. | |
+| `DELETE` | `/:id` | Elimina una épica (Valida que no tenga historias). | |
+| `GET` | `/:id/stories` | **Anidado:** Obtiene todas las historias de esta épica. |
 
-{
-  "email": "usuario@ejemplo.com",
-  "password": "contraseña"
-}
-```
+### 🔖 Historias (`/api/stories`)
+| Método | Endpoint | Descripción | Params / Body |
+| :----- | :------- | :---------- | :------------ |
+| `GET` | `/` | **Global:** Obtiene todas las historias del usuario (Dashboard). | |
+| `POST` | `/` | Crea una historia. | Body: `{ name, epic: ID, status... }` |
+| `GET` | `/:id` | Obtiene una historia por ID. | |
+| `PUT` | `/:id` | Actualiza historia (ej: cambiar estado). | Body: `{ status: "En progreso" }` |
+| `DELETE` | `/:id` | Elimina una historia. | |
+| `GET` | `/:id/tasks` | **Anidado:** Obtiene todas las tareas de esta historia. |
 
-**Respuesta:**
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "usuario": { ... }
-}
-```
-
----
-
-### Proyectos (requieren autenticación)
-
-#### Listar proyectos
-```
-GET /api/projects
-Authorization: Bearer <token>
-```
-
-#### Crear proyecto
-```
-POST /api/projects
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "nombre": "Mi Proyecto",
-  "descripcion": "Descripción del proyecto",
-  "owner": "id_del_usuario"
-}
-```
-
-#### Obtener proyecto específico
-```
-GET /api/projects/:id
-Authorization: Bearer <token>
-```
-
-#### Actualizar proyecto
-```
-PUT /api/projects/:id
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "nombre": "Nuevo nombre",
-  "descripcion": "Nueva descripción"
-}
-```
-
-#### Eliminar proyecto
-```
-DELETE /api/projects/:id
-Authorization: Bearer <token>
-```
+### ✅ Tareas (`/api/tasks`)
+| Método | Endpoint | Descripción | Body Requerido |
+| :----- | :------- | :---------- | :------------- |
+| `POST` | `/` | Crea una tarea. | `{ name, story: ID }` |
+| `GET` | `/:id` | Obtiene una tarea por ID. | |
+| `PUT` | `/:id` | Actualiza una tarea (ej: marcar `done`). | `{ done: true }` |
+| `DELETE` | `/:id` | Elimina una tarea. | |
 
 ---
 
-### Épicas (requieren autenticación)
+## 🗂 Estructura de Datos
 
-#### Listar épicas
-```
-GET /api/epics
-Authorization: Bearer <token>
-```
-
-#### Crear épica
-```
-POST /api/epics
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "titulo": "Título de la épica",
-  "descripcion": "Descripción",
-  "projectId": "id_del_proyecto"
-}
+### Jerarquía del Sistema
+```text
+User
+ └── Project
+      └── Epic
+           └── Story
+                └── Task
 ```
 
-#### Obtener épica
-```
-GET /api/epics/:id
-Authorization: Bearer <token>
-```
-
-#### Actualizar épica
-```
-PUT /api/epics/:id
-Authorization: Bearer <token>
-Content-Type: application/json
-```
-
-#### Eliminar épica
-```
-DELETE /api/epics/:id
-Authorization: Bearer <token>
-```
-
----
-
-### Historias (requieren autenticación)
-
-#### Listar historias
-```
-GET /api/stories
-Authorization: Bearer <token>
-```
-
-#### Crear historia
-```
-POST /api/stories
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "titulo": "Título de la historia",
-  "descripcion": "Descripción",
-  "epicId": "id_de_la_epica"
-}
-```
-
-#### Obtener historia
-```
-GET /api/stories/:id
-Authorization: Bearer <token>
-```
-
-#### Actualizar historia
-```
-PUT /api/stories/:id
-Authorization: Bearer <token>
-Content-Type: application/json
-```
-
-#### Eliminar historia
-```
-DELETE /api/stories/:id
-Authorization: Bearer <token>
-```
-
----
-
-### Tareas (requieren autenticación)
-
-#### Listar tareas
-```
-GET /api/tasks
-Authorization: Bearer <token>
-```
-
-#### Crear tarea
-```
-POST /api/tasks
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "titulo": "Título de la tarea",
-  "descripcion": "Descripción",
-  "storyId": "id_de_la_historia",
-  "estado": "pendiente|en_progreso|completada"
-}
-```
-
-#### Obtener tarea
-```
-GET /api/tasks/:id
-Authorization: Bearer <token>
-```
-
-#### Actualizar tarea
-```
-PUT /api/tasks/:id
-Authorization: Bearer <token>
-Content-Type: application/json
-```
-
-#### Eliminar tarea
-```
-DELETE /api/tasks/:id
-Authorization: Bearer <token>
-```
-
----
-
-## 🔐 Autenticación
-
-La API utiliza **JWT (JSON Web Tokens)** para autenticación. 
-
-Para acceder a rutas protegidas, incluye el token en el header:
-```
-Authorization: Bearer <tu_token_jwt>
-```
-
-El token se obtiene al registrarse o iniciar sesión.
-
-## 📦 Dependencias
-
-- **express** - Framework web
-- **mongoose** - ODM para MongoDB
-- **jwt** - Autenticación con tokens
-- **bcrypt** - Hash seguro de contraseñas
-- **cors** - Permitir solicitudes cross-origin
-- **dotenv** - Gestión de variables de entorno
-
-## 🛠️ Scripts
-
-- `npm run dev` - Inicia en modo desarrollo con nodemon
-- `npm start` - Inicia servidor en modo producción
-- `npm test` - Ejecuta tests (no configurado)
-
-## 📝 Variables de Entorno
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `PORT` | Puerto del servidor | 8000 |
-| `MONGODB_URI` | URI de conexión a MongoDB | mongodb+srv://user:pass@cluster.mongodb.net/dbname |
-| `JWT_SECRET` | Clave secreta para JWT | tu_clave_muy_segura |
-
-## 🚨 Manejo de Errores
-
-La API retorna códigos HTTP estándar:
-
-- `200` - Éxito
-- `201` - Recurso creado
-- `400` - Solicitud inválida
-- `401` - No autenticado
-- `403` - No autorizado
-- `404` - Recurso no encontrado
-- `500` - Error del servidor
-
-## 👤 Autor
-
-Gonzalo Barroso
-
-## 📄 Licencia
-
-ISC
-
----
-
-**Última actualización:** Diciembre 2025
+### Estados de Historia (Enum)
+Dependiendo de la configuración, los estados admitidos son:
+* `Pendiente` / `todo`
+* `En progreso` / `running`
+* `Completado` / `done`
