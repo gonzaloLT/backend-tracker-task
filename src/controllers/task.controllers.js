@@ -44,7 +44,7 @@ export const getTasksByStory = async (req, res) => {
 // POST /api/tasks
 export const createTask = async (req, res) => {
     try {
-        const { name, description, story, due } = req.body;
+        const { name, description, story } = req.body;
 
         if (!name || !story) {
             return res.status(400).json({ message: "El nombre y la historia son obligatorios" });
@@ -63,7 +63,6 @@ export const createTask = async (req, res) => {
             name,
             description,
             story,
-            due,
             owner: req.user.id,
         });
 

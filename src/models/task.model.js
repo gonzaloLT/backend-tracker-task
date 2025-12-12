@@ -12,8 +12,6 @@ const taskSchema = new schema(
             required: false,
             default: false 
         },
-        
-        due: { type: Date, required: false },
 
         story: {
             type: schema.Types.ObjectId,
